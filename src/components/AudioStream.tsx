@@ -1,54 +1,34 @@
+import { Volume2, VolumeX } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 export function AudioStream({ channel }: AudioStreamProps) {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
-  const [peerId] = useState(() => `disco-${channel}-${uuidv4()}`);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const peerRef = useRef<Peer | null>(null);
 
   useEffect(() => {
-    const peer = new Peer(peerId);
-    peerRef.current = peer;
-
-    peer.on('open', () => {
-      console.log('Connected with ID:', peerId);
-    });
-
-    peer.on('call', (call) => {
-      call.answer(); // Answer the call without sending a stream (listener mode)
-
-      call.on('stream', (remoteStream) => {
-        if (audioRef.current) {
-          audioRef.current.srcObject = remoteStream;
-        }
-      });
-    });
-
-    return () => {
-      peer.destroy();
-    };
-  }, [peerId]);
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.muted = muted;
+    }
+  }, [volume, muted]);
 
   const toggleMute = () => {
     setMuted(!muted);
-    if (audioRef.current) {
-      audioRef.current.muted = !muted;
-    }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
   };
 
   return (
     <div className="flex items-center space-x-4 bg-white/10 backdrop-blur p-4 rounded-lg">
-      <audio ref={audioRef} autoPlay playsInline />
+      <audio ref={audioRef} autoPlay playsInline controls={false} />
       <button
         onClick={toggleMute}
         className="p-2 rounded-full hover:bg-white/10 transition-colors"
+        aria-label={muted ? 'Unmute' : 'Mute'}
       >
         {muted ? (
           <VolumeX className="w-6 h-6" />
@@ -60,10 +40,11 @@ export function AudioStream({ channel }: AudioStreamProps) {
         type="range"
         min="0"
         max="1"
-        step="0.1"
+        step="0.01"
         value={volume}
         onChange={handleVolumeChange}
         className="w-32 accent-purple-500"
+        aria-label="Volume control"
       />
     </div>
   );

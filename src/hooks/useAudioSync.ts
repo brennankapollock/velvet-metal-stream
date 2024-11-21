@@ -23,13 +23,20 @@ export function useAudioSync(roomId: string) {
         const conn = peer.connect(`disco-${roomId}-host`);
         conn.on('open', () => {
           console.log('Connected to host');
-          // Call the host to receive audio stream
-          const call = peer.call(`disco-${roomId}-host`, new MediaStream());
+          // Create an empty audio stream for the initial call
+          const audioCtx = new AudioContext();
+          const oscillator = audioCtx.createOscillator();
+          const dest = audioCtx.createMediaStreamDestination();
+          oscillator.connect(dest);
+
+          // Call the host
+          const call = peer.call(`disco-${roomId}-host`, dest.stream);
           call.on('stream', (remoteStream) => {
-            mediaStreamRef.current = remoteStream;
+            console.log('Received remote stream');
             const audio = document.querySelector('audio');
             if (audio) {
               audio.srcObject = remoteStream;
+              audio.play().catch(console.error);
             }
           });
         });
@@ -47,11 +54,15 @@ export function useAudioSync(roomId: string) {
       });
 
       peer.on('call', (call) => {
-        // If we have an active media stream, send it to the new peer
+        console.log('Received call from listener');
         if (mediaStreamRef.current) {
+          console.log('Answering with current stream');
           call.answer(mediaStreamRef.current);
         } else {
-          call.answer(new MediaStream());
+          console.log('No stream available yet');
+          const audioCtx = new AudioContext();
+          const dest = audioCtx.createMediaStreamDestination();
+          call.answer(dest.stream);
         }
       });
     }

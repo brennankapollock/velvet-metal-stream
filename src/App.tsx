@@ -1,6 +1,7 @@
 import { Headphones } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { AudioStream } from './components/AudioStream';
 import MusicPlayer from './components/MusicPlayer';
 import RoomCreation from './components/RoomCreation';
 import RoomInfo from './components/RoomInfo';
@@ -70,7 +71,7 @@ function App() {
             <div className="space-y-6">
               <RoomInfo roomId={roomId} connectedUsers={connectedUsers} />
 
-              {isHost && (
+              {isHost ? (
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
                   <h2 className="text-xl font-bold mb-4">DJ Controls</h2>
                   <MusicPlayer
@@ -79,6 +80,11 @@ function App() {
                     onPause={stopBroadcast}
                     onSync={() => {}}
                   />
+                </div>
+              ) : (
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+                  <h2 className="text-xl font-bold mb-4">Listener Controls</h2>
+                  <AudioStream channel={roomId} />
                 </div>
               )}
             </div>
