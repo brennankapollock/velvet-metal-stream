@@ -10,6 +10,14 @@ export function AudioStream({ channel }: AudioStreamProps) {
     if (audioRef.current) {
       audioRef.current.volume = volume;
       audioRef.current.muted = muted;
+
+      // Ensure autoplay works
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.log('Autoplay prevented:', error);
+        });
+      }
     }
   }, [volume, muted]);
 

@@ -12,6 +12,11 @@ export function useAudioSync(roomId: string) {
   useEffect(() => {
     if (!roomId) return;
 
+    // Initialize audio context
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+
     const peer = new Peer(`disco-${roomId}-${isHost ? 'host' : Date.now()}`);
     peerRef.current = peer;
 
@@ -23,20 +28,19 @@ export function useAudioSync(roomId: string) {
         const conn = peer.connect(`disco-${roomId}-host`);
         conn.on('open', () => {
           console.log('Connected to host');
-          // Create an empty audio stream for the initial call
-          const audioCtx = new AudioContext();
-          const oscillator = audioCtx.createOscillator();
-          const dest = audioCtx.createMediaStreamDestination();
-          oscillator.connect(dest);
-
           // Call the host
-          const call = peer.call(`disco-${roomId}-host`, dest.stream);
+          const call = peer.call(`disco-${roomId}-host`, new MediaStream());
+
           call.on('stream', (remoteStream) => {
             console.log('Received remote stream');
-            const audio = document.querySelector('audio');
-            if (audio) {
-              audio.srcObject = remoteStream;
-              audio.play().catch(console.error);
+            mediaStreamRef.current = remoteStream;
+
+            // Find the audio element and set the stream
+            const audioElements = document.getElementsByTagName('audio');
+            if (audioElements.length > 0) {
+              const audioElement = audioElements[0];
+              audioElement.srcObject = remoteStream;
+              audioElement.play().catch(console.error);
             }
           });
         });
@@ -59,16 +63,19 @@ export function useAudioSync(roomId: string) {
           console.log('Answering with current stream');
           call.answer(mediaStreamRef.current);
         } else {
-          console.log('No stream available yet');
-          const audioCtx = new AudioContext();
-          const dest = audioCtx.createMediaStreamDestination();
-          call.answer(dest.stream);
+          console.log('No stream available yet, answering with empty stream');
+          const emptyStream =
+            audioContextRef.current!.createMediaStreamDestination().stream;
+          call.answer(emptyStream);
         }
       });
     }
 
     return () => {
       peer.destroy();
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close();
+      }
     };
   }, [roomId, isHost]);
 
