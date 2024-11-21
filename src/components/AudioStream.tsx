@@ -1,12 +1,3 @@
-import { Volume2, VolumeX } from 'lucide-react';
-import { Peer } from 'peerjs';
-import React, { useEffect, useRef, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-
-interface AudioStreamProps {
-  channel: string;
-}
-
 export function AudioStream({ channel }: AudioStreamProps) {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
